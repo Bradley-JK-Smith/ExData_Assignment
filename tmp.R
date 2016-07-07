@@ -1,8 +1,8 @@
-library(data.table)
-library(dplyr)
+source('sourceList.R')
 
-NEI <- readRDS("data/summarySCC_PM25.rds")
-SCC <- readRDS("data/Source_Classification_Code.rds")
+
+NEI <- readData('summarySCC_PM25')
+SCC <- readData('Source_Classification_Code')
 
 
 # Plot 1
@@ -54,12 +54,17 @@ qplot(year,
 
 # Plot 4
 
-idx <- grepl('combustion', SCC$SCC.Level.Four, ignore.case=T)
-idy <- grepl('coal', SCC$SCC.Level.Four, ignore.case=T)
-unique(SCC[idx&idy,'SCC.Level.Four'])
+# Need to check these
+# Also used for Plot 5
 
-x <- group_by(NEI[idx&idy,], year) %>%
+ids <- grepl('Fuel Comb.*Coal', SCC$EI.Sector)
+idx <- unique(SCC[ids,'SCC'])
+
+idy <- NEI$SCC %in% idx
+
+x <- group_by(NEI[idy,], year) %>%
         summarise(pm25 = sum(Emissions)/1e3)
+
 
 plot(x,
      las  = 1,
@@ -70,3 +75,23 @@ plot(x,
      ylab = 'Total PM2.5 emissions (thousands tons)'
     )
   
+# Plot 5
+
+ids <- grepl('On-Road.*Vehicles', SCC$EI.Sector)
+idx <- unique(SCC[ids,'SCC'])
+
+idy <- NEI$SCC %in% idx
+
+x <- group_by(NEI[idy,], year) %>%
+        filter(fips=='24510') %>%
+        summarise(pm25 = sum(Emissions))
+
+
+plot(x,
+     las  = 1,
+     pch  = 19,
+     type = 'b',
+     main = 'Total PM2.5 emissions in Baltimore City from motor vehicles sources by year',
+     xlab = 'Year',
+     ylab = 'Total PM2.5 emissions (tons)'
+)
